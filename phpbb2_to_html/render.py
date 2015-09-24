@@ -24,7 +24,8 @@ def render( data ):
         for forum in data.forums.values():
             _mkdir_p( config.PATH_PREFIX + forum.path() )
 
-    for topic in [ data.topics[301] ]: # data.topics.values():
+    for topic in data.topics.values():
+        print( topic.path() )
         html = topic_template.render(
             topic = topic,
             posts = data.posts,
