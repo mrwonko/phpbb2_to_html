@@ -1,10 +1,7 @@
 import os.path
 import time
 
-import bbcode #TODO: DELETEME
-import re #TODO: DELETEME
-
-from . import utils
+from . import utils, bbcode
 
 DATE_FORMAT = u"{date.tm_year}-{date.tm_mon:0>2}-{date.tm_mday:0>2} {date.tm_hour:0>2}{sep}{date.tm_min:0>2}"
 TOPIC_TYPE_NORMAL = 0
@@ -64,54 +61,10 @@ class Topic:
     def title( self ):
         return self._title # already escaped
 
-#TODO DELETEME
-DOMAIN_RE = re.compile(r'(?im)(?:www\d{0,3}[.]|[a-z0-9.\-]+[.](?:com|net|org|edu|biz|gov|mil|info|io|name|me|tv|us|uk|mobi))')
-INTERNAL_LINK_RE = re.compile(r'(?:.*/)?viewtopic\.php\?(?:.*&)?(?:p=(?P<post_id>[0-9]+)|t=(?P<topic_id>[0-9]+).*)')
-
-def convertInternalLink( href, context ):
-    match = INTERNAL_LINK_RE.match( href )
-    if match:
-        data = match.groupdict()
-        try:
-            topic = context[ "topics" ][ int( data[ "topic_id" ] ) ] if data[ "topic_id" ] else context[ "posts" ][ int( data[ "post_id" ] ) ].topic
-            return u"../../{}".format( escapeHTML( topic.url() ) )
-        except KeyError:
-            # missing posts/topics
-            return href
-    return href
-
-def linker( text, context ):
-    href = text
-    if u"://" not in href:
-        href = u"http://{}".format( href )
-    href = convertInternalLink( href, context )
-    return u'<a href="{}">{}</a>'.format( href.replace(u'"', u'%22'), text )
-
-def render_url( name, value, options, parent, context ):
-    if options and 'url' in options:
-        # Option values are not escaped for HTML output.
-        href = escapeHTML( options['url'] )
-    else:
-        href = value
-    # Completely ignore javascript: and data: "links".
-    if re.sub(r'[^a-z0-9+]', '', href.lower().split(u':', 1)[0]) in (u'javascript', u'data', u'vbscript'):
-        return ''
-    # Only add the missing http:// if it looks like it starts with a domain name.
-    if u'://' not in href and _domain_re.match(href):
-        href = 'http://' + href
-    # For local/
-    if u'://' not in href or u'darth-arth.de' in href:
-        href = convertInternalLink( href, context )
-    return u'<a href="{}">{}</a>'.format( href.replace(u'"', u'%22'), value )
-
-parser = bbcode.Parser(
-    linker_takes_context = True,
-    linker = linker
-    )
 class Post:
     def __init__( self, topic, id, username, timestamp, subject, text, enable_bbcode, enable_html, bbcode_uid ):
         self.id = id
-        self.bbcode_uid = bbcode_uid
+        self._bbcode_uid = bbcode_uid
         self._username = username.decode("latin-1")
         self._time = time.gmtime( timestamp )
         self._subject = subject.decode("latin-1")
@@ -127,9 +80,7 @@ class Post:
         # html whitelist is stored by phpbb, in my case it's: b,i,u,pre,object,embed
         # but I'm not going to be that selective.
         if self._enable_bbcode:
-            #TODO
-            parser.escape_html = False # fairly sure bbcode takes care of that
-            return parser.format( self._text, topics = topics, posts = posts )
+            return bbcode.convert( self._text, self._bbcode_uid, topics = topics, posts = posts )
         else:
             return self._text
     

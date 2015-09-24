@@ -6,6 +6,4 @@ To this end this project connects to a MySQL database and extracts the topics/po
 
 Most configuration is defined in [a static config file](phpbb2_to_html/config.py); I probably wouldn't release this as a package like that, but it works for me, and this isn't really meant to be for anyone but me. (But if you find it useful, great!)
 
-The bbcode parsing is partially derived from [Dan Watson's bbcode library](https://pypi.python.org/pypi/bbcode/1.0.19); to prevent any potential issues this is thus also licensed as BSD.
-
 As far as I can tell the MySQL-python package is only available for Python 2, as such this probably does not work with Python 3.

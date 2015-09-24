@@ -24,7 +24,7 @@ def render( data ):
         for forum in data.forums.values():
             _mkdir_p( config.PATH_PREFIX + forum.path() )
 
-    for topic in data.topics.values():
+    for topic in [ data.topics[301] ]: # data.topics.values():
         html = topic_template.render(
             topic = topic,
             posts = data.posts,
@@ -33,5 +33,5 @@ def render( data ):
         if not config.DRY_RUN:
             with open( config.PATH_PREFIX + topic.path(), "wb" ) as f:
                 f.write( html.encode( "utf-8" ) )
-            if config.SINGLE_TOPIC:
-                break
+        if config.SINGLE_TOPIC:
+            break
