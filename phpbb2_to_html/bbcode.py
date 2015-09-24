@@ -147,7 +147,7 @@ def convert( text, bbcode_uid, **context ):
         
         ( '|'.join( [
             #[img]src[/img]
-            r'(?P<img>\[img\](?P<src>.*?)\[/img\])',
+            r'(?P<img>\[img:{uid}\](?P<src>.*?)\[/img:{uid}\])',
             #[url]href[/img]
             r'(?P<url>\[url\](?P<href_and_text>.*?)\[/url\])',
             #[url=href]text[/url]
