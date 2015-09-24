@@ -5,6 +5,13 @@ from . import utils, config
 _INTERNAL_POST_LINK_RE = re.compile( r'./viewtopic\.php\?(?:.*&)?p=([0-9]+)' )
 _INTERNAL_TOPIC_LINK_RE = re.compile( r'/viewtopic\.php\?(?:.*&)?t=([0-9]+)' )
 
+# prevent img url injections
+def _safe_img( match ):
+    if "[url" in match.group():
+        return match.group()
+    else:
+        return '<img src="{}"/>'.format( match.group( 1 ) )
+
 # can't precompile due to uid
 _REPLACEMENTS = [
     ( r'\[code:1:{uid}\](.*?)\[/code:1:{uid}\]', r'<pre>\1</pre>', re.I | re.S ),
@@ -20,6 +27,8 @@ _REPLACEMENTS = [
     ( r'\[/u:{uid}\]', r'</u>', re.I ),
     ( r'\[i:{uid}\]', r'<em>', re.I ),
     ( r'\[/i:{uid}\]', r'</em>', re.I ),
+    #[img]src[/img]
+    ( r'(?P<img>\[img:{uid}\](.+?)\[/img:{uid}\])', _safe_img, re.I ),
     ]
 
 _NEWLINE_OR_PRE_RE = re.compile( r'\n|<pre>' )
@@ -115,11 +124,9 @@ def convert( text, bbcode_uid, **context ):
         return u'{}<a href="{}">{}</a>'.format( prefix, href, text )
     
     # handle all kinds of links at once, to prevent injections using nested urls
-    def url_or_img( match ):
+    def urls( match ):
         captures = match.groupdict()
-        if captures["img"]:
-            return u'<img src="{}"/>'.format( captures["src"] )
-        elif captures["url"]:
+        if captures["url"]:
             href = captures["href_and_text"]
             return url( u"", href, href )
         elif captures["url_text"]:
@@ -146,15 +153,13 @@ def convert( text, bbcode_uid, **context ):
             ] ), list, re.I ),
         
         ( '|'.join( [
-            #[img]src[/img]
-            r'(?P<img>\[img:{uid}\](?P<src>.*?)\[/img:{uid}\])',
             #[url]href[/img]
             r'(?P<url>\[url\](?P<href_and_text>.*?)\[/url\])',
             #[url=href]text[/url]
             r'(?P<url_text>\[url=(?P<href>.*?)\](?P<text>.*?)\[/url\])',
             # http://url or www.url or ftp.url
             r'(?P<url_auto>(?P<prefix>(?:^|[ \n]))(?P<auto_href>(?:\w+://|(?:www|ftp)\.)[^\s,"\'<>]+))'
-            ] ), url_or_img, re.I ),
+            ] ), urls, re.I ),
         ]
     
     for pattern, repl, flags in replacements:
